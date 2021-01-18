@@ -93,8 +93,10 @@ internal class CornerRadiusFrameLayout : FrameLayout {
 
         noCornerRadius = (radius == 0f)
 
-        // Discard invalid events
-        if (width == 0 || height == 0) return
+        if (width == 0 || height == 0) {
+            // Discard invalid events
+            return
+        }
 
         resetPath()
         invalidate()

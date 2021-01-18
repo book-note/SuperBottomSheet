@@ -30,13 +30,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import com.andrefrsousa.superbottomsheet.SuperBottomSheetFragment
-import kotlinx.android.synthetic.main.activity_demo.*
+import kotlinx.android.synthetic.main.activity_main.*
 
-class DemoActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_demo)
+        setContentView(R.layout.activity_main)
 
         show_sheet.setOnClickListener {
             val sheet = DemoBottomSheetFragment()
@@ -50,6 +50,14 @@ class DemoBottomSheetFragment : SuperBottomSheetFragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         super.onCreateView(inflater, container, savedInstanceState)
         return inflater.inflate(R.layout.fragment_demo_sheet, container, false)
+    }
+
+    override fun isSheetAlwaysExpanded(): Boolean {
+        return true
+    }
+
+    override fun getExpandedHeight(): Int {
+        return ViewGroup.LayoutParams.WRAP_CONTENT
     }
 
     override fun getCornerRadius() = context!!.resources.getDimension(R.dimen.demo_sheet_rounded_corner)
