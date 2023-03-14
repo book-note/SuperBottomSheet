@@ -39,13 +39,14 @@ import androidx.annotation.UiThread
 import androidx.core.content.ContextCompat
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetBehaviorFix
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 abstract class SuperBottomSheetFragment : BottomSheetDialogFragment() {
 
     private lateinit var sheetTouchOutsideContainer: View
     private lateinit var sheetContainer: CornerRadiusFrameLayout
-    private lateinit var behavior: BottomSheetBehavior<*>
+    private lateinit var behavior: BottomSheetBehaviorFix<*>
     private lateinit var callback: BottomSheetBehavior.BottomSheetCallback
 
     // Customizable properties
@@ -144,7 +145,7 @@ abstract class SuperBottomSheetFragment : BottomSheetDialogFragment() {
         sheetContainer.setCornerRadius(propertyCornerRadius)
 
         // Load bottom sheet behaviour
-        behavior = BottomSheetBehavior.from(sheetContainer)
+        behavior = BottomSheetBehavior.from(sheetContainer) as BottomSheetBehaviorFix<*>
 
         // Set tablet sheet width when in landscape. This will avoid full bleed sheet
         if (context.isTablet() && !context.isInPortrait()) {
