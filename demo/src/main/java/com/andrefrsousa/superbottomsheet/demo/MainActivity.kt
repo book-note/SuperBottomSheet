@@ -62,5 +62,5 @@ class DemoBottomSheetFragment : SuperBottomSheetFragment() {
 
     override fun getCornerRadius() = context!!.resources.getDimension(R.dimen.demo_sheet_rounded_corner)
 
-    override fun getStatusBarColor() = Color.RED
+    override fun getStatusBarColor() = Color.TRANSPARENT
 }

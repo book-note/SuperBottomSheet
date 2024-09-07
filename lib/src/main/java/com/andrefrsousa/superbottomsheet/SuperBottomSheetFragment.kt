@@ -64,16 +64,16 @@ abstract class SuperBottomSheetFragment : BottomSheetDialogFragment() {
     /** Methods from [BottomSheetDialogFragment]  */
 
     final override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        if (animateStatusBar()) {
-            return SuperBottomSheetDialog(context, R.style.superBottomSheetDialog)
-        }
-
-        return SuperBottomSheetDialog(context)
+        return SuperBottomSheetDialog(context, R.style.superBottomSheetDialog)
     }
 
     @CallSuper
     @SuppressLint("NewApi")
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         // Change status bar on the condition: API >= 21
         val supportsStatusBarColor = hasMinimumSdk(Build.VERSION_CODES.LOLLIPOP)
         canSetStatusBarColor = !context.isTablet() && supportsStatusBarColor
@@ -85,13 +85,13 @@ abstract class SuperBottomSheetFragment : BottomSheetDialogFragment() {
         propertyIsAlwaysExpanded = isSheetAlwaysExpanded()
         propertyIsSheetCancelable = isSheetCancelable()
         propertyIsSheetCancelableOnTouchOutside = isSheetCancelableOnTouchOutside()
-        propertyAnimateCornerRadius = animateCornerRadius()
 
         // Set dialog properties
         dialog.runIfNotNull {
             setCancelable(propertyIsSheetCancelable)
 
-            val isCancelableOnTouchOutside = propertyIsSheetCancelable && propertyIsSheetCancelableOnTouchOutside
+            val isCancelableOnTouchOutside =
+                propertyIsSheetCancelable && propertyIsSheetCancelableOnTouchOutside
             setCanceledOnTouchOutside(isCancelableOnTouchOutside)
 
             window.runIfNotNull {
@@ -100,13 +100,17 @@ abstract class SuperBottomSheetFragment : BottomSheetDialogFragment() {
 
                 if (supportsStatusBarColor) {
                     addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+                    // 设置状态栏，并且全屏显示
                     addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-                    setStatusBarColor(1f)
+                    statusBarColor = propertyStatusBarColor
                 }
 
                 if (context.isTablet() && !context.isInPortrait()) {
                     setGravity(Gravity.CENTER_HORIZONTAL)
-                    setLayout(resources.getDimensionPixelSize(R.dimen.super_bottom_sheet_width), ViewGroup.LayoutParams.WRAP_CONTENT)
+                    setLayout(
+                        resources.getDimensionPixelSize(R.dimen.super_bottom_sheet_width),
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
                 }
             }
         }
@@ -166,29 +170,20 @@ abstract class SuperBottomSheetFragment : BottomSheetDialogFragment() {
         }
 
         // Only skip the collapse state when the device is in landscape or the sheet is always expanded
-        val deviceInLandscape = (!context.isTablet() && !context.isInPortrait()) || propertyIsAlwaysExpanded
+        val deviceInLandscape =
+            (!context.isTablet() && !context.isInPortrait()) || propertyIsAlwaysExpanded
         behavior.skipCollapsed = deviceInLandscape
 
         if (deviceInLandscape) {
             behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            setStatusBarColor(1f)
 
             // Load content container height
-            sheetContainer.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            sheetContainer.viewTreeObserver.addOnPreDrawListener(object :
+                ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
                     if (sheetContainer.height > 0) {
                         sheetContainer.viewTreeObserver.removeOnPreDrawListener(this)
-
-                        // If the content sheet is expanded set the background and status bar properties
-                        if (sheetContainer.height == sheetTouchOutsideContainer.height) {
-                            setStatusBarColor(0f)
-
-                            if (propertyAnimateCornerRadius) {
-                                sheetContainer.setCornerRadius(0f)
-                            }
-                        }
                     }
-
                     return true
                 }
             })
@@ -198,79 +193,16 @@ abstract class SuperBottomSheetFragment : BottomSheetDialogFragment() {
         callback = object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
                 if (newState == BottomSheetBehavior.STATE_HIDDEN) {
-                    setStatusBarColor(1f)
                     dialog?.cancel()
                 }
             }
 
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                setRoundedCornersOnScroll(bottomSheet, slideOffset)
-                setStatusBarColorOnScroll(bottomSheet, slideOffset)
             }
         }
     }
 
-    //region STATUS BAR
-
-    @UiThread
-    private fun setStatusBarColorOnScroll(bottomSheet: View, slideOffset: Float) {
-        if (!canSetStatusBarColor) {
-            return
-        }
-
-        if (bottomSheet.height != sheetTouchOutsideContainer.height) {
-            canSetStatusBarColor = false
-            return
-        }
-
-        if (slideOffset.isNaN() || slideOffset <= 0) {
-            setStatusBarColor(1f)
-            return
-        }
-
-        val invertOffset = 1 - (1 * slideOffset)
-        setStatusBarColor(invertOffset)
-    }
-
-    @SuppressLint("NewApi")
-    @UiThread
-    private fun setStatusBarColor(dim: Float) {
-        if (!canSetStatusBarColor) {
-            return
-        }
-
-        val color = calculateColor(propertyStatusBarColor, dim)
-        dialog?.window!!.statusBarColor = color
-    }
-
-    //endregion
-
-    //region CORNERS
-
-    @UiThread
-    private fun setRoundedCornersOnScroll(bottomSheet: View, slideOffset: Float) {
-        if (!propertyAnimateCornerRadius) return
-
-        if (bottomSheet.height != sheetTouchOutsideContainer.height) {
-            propertyAnimateCornerRadius = false
-            return
-        }
-
-        if (slideOffset.isNaN() || slideOffset <= 0) {
-            sheetContainer.setCornerRadius(propertyCornerRadius)
-            return
-        }
-
-        if (propertyAnimateCornerRadius) {
-            val radius = propertyCornerRadius - (propertyCornerRadius * slideOffset)
-            sheetContainer.setCornerRadius(radius)
-        }
-    }
-
-    //endregion
-
     //region PUBLIC
-
     @Dimension
     open fun getPeekHeight(): Int = with(context!!.getAttrId(R.attr.superBottomSheet_peekHeight)) {
         val peekHeightMin = when (this) {
@@ -300,72 +232,70 @@ abstract class SuperBottomSheetFragment : BottomSheetDialogFragment() {
     }
 
     @ColorInt
-    open fun getBackgroundColor(): Int = with(context!!.getAttrId(R.attr.superBottomSheet_backgroundColor)) {
-        return when (this) {
-            INVALID_RESOURCE_ID -> Color.WHITE
-            else -> ContextCompat.getColor(context!!, this)
+    open fun getBackgroundColor(): Int =
+        with(context!!.getAttrId(R.attr.superBottomSheet_backgroundColor)) {
+            return when (this) {
+                INVALID_RESOURCE_ID -> Color.WHITE
+                else -> ContextCompat.getColor(context!!, this)
+            }
         }
-    }
 
     @ColorInt
-    open fun getStatusBarColor(): Int = with(context!!.getAttrId(R.attr.superBottomSheet_statusBarColor)) {
-        return when (this) {
-            INVALID_RESOURCE_ID -> ContextCompat.getColor(context!!, context!!.getAttrId(R.attr.colorPrimaryDark))
-            else -> ContextCompat.getColor(context!!, this)
+    open fun getStatusBarColor(): Int =
+        with(context!!.getAttrId(R.attr.superBottomSheet_statusBarColor)) {
+            return when (this) {
+                INVALID_RESOURCE_ID -> ContextCompat.getColor(
+                    context!!,
+                    context!!.getAttrId(R.attr.colorPrimaryDark)
+                )
+
+                else -> ContextCompat.getColor(context!!, this)
+            }
         }
-    }
 
     @Dimension
-    open fun getCornerRadius(): Float = with(context!!.getAttrId(R.attr.superBottomSheet_cornerRadius)) {
-        return when (this) {
-            INVALID_RESOURCE_ID -> context!!.resources.getDimension(R.dimen.super_bottom_sheet_radius)
-            else -> resources.getDimension(this)
+    open fun getCornerRadius(): Float =
+        with(context!!.getAttrId(R.attr.superBottomSheet_cornerRadius)) {
+            return when (this) {
+                INVALID_RESOURCE_ID -> context!!.resources.getDimension(R.dimen.super_bottom_sheet_radius)
+                else -> resources.getDimension(this)
+            }
         }
-    }
 
-    open fun isSheetAlwaysExpanded(): Boolean = with(context!!.getAttrId(R.attr.superBottomSheet_alwaysExpanded)) {
-        return when (this) {
-            INVALID_RESOURCE_ID -> context!!.resources.getBoolean(R.bool.super_bottom_sheet_isAlwaysExpanded)
-            else -> resources.getBoolean(this)
+    open fun isSheetAlwaysExpanded(): Boolean =
+        with(context!!.getAttrId(R.attr.superBottomSheet_alwaysExpanded)) {
+            return when (this) {
+                INVALID_RESOURCE_ID -> context!!.resources.getBoolean(R.bool.super_bottom_sheet_isAlwaysExpanded)
+                else -> resources.getBoolean(this)
+            }
         }
-    }
 
-    open fun isSheetCancelableOnTouchOutside(): Boolean = with(context!!.getAttrId(R.attr.superBottomSheet_cancelableOnTouchOutside)) {
-        return when (this) {
-            INVALID_RESOURCE_ID -> context!!.resources.getBoolean(R.bool.super_bottom_sheet_cancelableOnTouchOutside)
-            else -> resources.getBoolean(this)
+    open fun isSheetCancelableOnTouchOutside(): Boolean =
+        with(context!!.getAttrId(R.attr.superBottomSheet_cancelableOnTouchOutside)) {
+            return when (this) {
+                INVALID_RESOURCE_ID -> context!!.resources.getBoolean(R.bool.super_bottom_sheet_cancelableOnTouchOutside)
+                else -> resources.getBoolean(this)
+            }
         }
-    }
 
-    open fun isSheetCancelable(): Boolean = with(context!!.getAttrId(R.attr.superBottomSheet_cancelable)) {
-        return when (this) {
-            INVALID_RESOURCE_ID -> context!!.resources.getBoolean(R.bool.super_bottom_sheet_cancelable)
-            else -> resources.getBoolean(this)
+    open fun isSheetCancelable(): Boolean =
+        with(context!!.getAttrId(R.attr.superBottomSheet_cancelable)) {
+            return when (this) {
+                INVALID_RESOURCE_ID -> context!!.resources.getBoolean(R.bool.super_bottom_sheet_cancelable)
+                else -> resources.getBoolean(this)
+            }
         }
-    }
 
-    @IntRange(from = ViewGroup.LayoutParams.WRAP_CONTENT.toLong(), to = ViewGroup.LayoutParams.MATCH_PARENT.toLong())
-    open fun getExpandedHeight() = with(context!!.getAttrId(R.attr.superBottomSheet_expandedHeight)) {
-        when (this) {
-            INVALID_RESOURCE_ID -> context!!.resources.getInteger(R.integer.super_bottom_expanded_behaviour)
-            else -> resources.getInteger(this)
+    @IntRange(
+        from = ViewGroup.LayoutParams.WRAP_CONTENT.toLong(),
+        to = ViewGroup.LayoutParams.MATCH_PARENT.toLong()
+    )
+    open fun getExpandedHeight() =
+        with(context!!.getAttrId(R.attr.superBottomSheet_expandedHeight)) {
+            when (this) {
+                INVALID_RESOURCE_ID -> context!!.resources.getInteger(R.integer.super_bottom_expanded_behaviour)
+                else -> resources.getInteger(this)
+            }
         }
-    }
-
-
-    open fun animateCornerRadius(): Boolean = with(context!!.getAttrId(R.attr.superBottomSheet_animateCornerRadius)) {
-        return when (this) {
-            INVALID_RESOURCE_ID -> context!!.resources.getBoolean(R.bool.super_bottom_sheet_animate_corner_radius)
-            else -> resources.getBoolean(this)
-        }
-    }
-
-    open fun animateStatusBar(): Boolean = with(context!!.getAttrId(R.attr.superBottomSheet_animateStatusBar)) {
-        return when (this) {
-            INVALID_RESOURCE_ID -> context!!.resources.getBoolean(R.bool.super_bottom_sheet_animate_status_bar)
-            else -> resources.getBoolean(this)
-        }
-    }
-
     //endregion
 }

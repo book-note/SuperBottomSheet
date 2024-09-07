@@ -1,7 +1,5 @@
 <resources>
-
     <style name="superBottomSheetDialog" parent="Theme.Design.Light.BottomSheetDialog">
         <item name="android:windowIsFloating">false</item>
     </style>
-
 </resources>
